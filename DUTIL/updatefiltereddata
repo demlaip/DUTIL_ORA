@@ -1,0 +1,74 @@
+CREATE OR REPLACE PROCEDURE updatefiltereddata(
+   p_target_tablename          all_objects.object_name%TYPE,
+   p_set_stmt         VARCHAR2,
+   p_where_clause           VARCHAR2,
+   p_rowcount                   OUT   VARCHAR2,
+   p_success          OUT   NUMBER
+)
+
+
+
+IS
+  /*VARIABLE initialization*/
+    updatequery    VARCHAR2 (8000);
+   v_error_code   NUMBER;
+   v_error_msg    VARCHAR2 (255);
+   v_update_rowcount  NUMBER;
+   
+BEGIN
+
+
+ updatequery := 'UPDATE  '|| p_target_tablename
+                        ||'  SET  '||    p_set_stmt   
+                        ||'  WHERE  '||    p_where_clause  
+                    ;
+
+   DBMS_OUTPUT.PUT_LINE('FINALUPDATEQUERY:  '||updatequery);
+   
+EXECUTE IMMEDIATE (updatequery);
+
+  v_update_rowcount  := SQL%ROWCOUNT;
+p_rowcount  :=v_update_rowcount;
+DBMS_OUTPUT.PUT_LINE('UPDATED ROWS:  '||p_rowcount );
+
+   IF p_rowcount   >= 0
+   THEN
+      p_success := 0;
+   END IF;
+   COMMIT;
+   
+EXCEPTION
+   WHEN OTHERS
+   THEN
+      p_success := -1;
+      v_error_code := SQLCODE;
+      v_error_msg := v_error_msg || SQLERRM;
+      ROLLBACK;
+      p3_errorlog ('updatefiltereddata_prc', v_error_msg,' ');
+END;
+/
+
+
+/*TEST BLOCK
+
+SET SERVEROUTPUT ON;
+
+DECLARE
+v_ret NUMBER(5);
+v_rowcount NUMBER;
+   v_time VARCHAR2(200);
+BEGIN
+SELECT  to_char(systimestamp, 'HH24:MI:SS.FF6')  INTO v_time FROM dual;
+   DBMS_OUTPUT.PUT_LINE('START TIME:  '|| v_time);
+   
+updatefiltereddata('TEST_SRC_TABLE','STATUS_CODE =23','mod(SLNO,2) > 0',v_rowcount,v_ret);
+
+SELECT  to_char(systimestamp, 'HH24:MI:SS.FF6')  INTO v_time FROM dual;
+   DBMS_OUTPUT.PUT_LINE('END TIME:  '|| v_time);  
+
+END;
+/
+
+--select mod(5,2) from dual
+
+*/

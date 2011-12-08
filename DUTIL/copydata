@@ -1,0 +1,113 @@
+CREATE OR REPLACE PROCEDURE copydata(
+   p_src_tablename          all_objects.object_name%TYPE,
+   p_dest_tablename         all_objects.object_name%TYPE,
+   p_rowcount                   OUT   VARCHAR2,
+   p_success          OUT   NUMBER
+)
+
+IS
+  /*VARIABLE initialization*/
+  truncDest_table VARCHAR2(100);
+    strquery1      VARCHAR2 (4000);
+   colquery1      VARCHAR2 (4000);
+   strquery2      VARCHAR2 (4000);
+   colquery2      VARCHAR2 (4000);
+   strquery3      VARCHAR2 (10000);
+   insertquery    VARCHAR2 (8000);
+   v_error_code   NUMBER;
+   v_error_msg    VARCHAR2 (255);
+   v_insert_rowcount  NUMBER;
+   
+BEGIN
+
+--destination table should be empty ideally otherwise,we do it  here.
+truncDest_table := 'truncate table  '|| p_dest_tablename;
+--Execute immediate (truncDest_table);
+
+ insertquery := 'INSERT INTO ' || p_dest_tablename || '(';
+
+--one by one fetching dest_table columns in dynamic Insert Query.
+   FOR col_names IN (SELECT column_name
+                                FROM all_tab_cols
+                                WHERE table_name = UPPER (p_dest_tablename)
+                                )
+   LOOP
+      colquery1 := colquery1 || col_names.column_name || ',';
+   END LOOP;
+
+   colquery1 := RTRIM (colquery1, ',');
+   DBMS_OUTPUT.PUT_LINE('colquery1:  '||colquery1);
+   strquery2 := ' SELECT ';
+    FOR col_names IN (SELECT column_name
+                       FROM all_tab_cols
+                      WHERE table_name = UPPER (p_dest_tablename)
+                       )
+   LOOP
+      colquery2 := colquery2 || col_names.column_name || ',';
+   END LOOP;
+
+   colquery2 := RTRIM (colquery2, ',');
+   DBMS_OUTPUT.PUT_LINE('colquery2:  '||colquery2);
+   
+   
+   strquery3 :=
+         insertquery
+      || colquery1
+      || ')'
+      || ' SELECT  '
+      || colquery2
+      || '   FROM '
+      || p_src_tablename
+--      || ' WHERE '
+--      || p_src_status_col
+--      || ' >1 '
+      ;
+
+   --display dynamic Insert query formed.
+   DBMS_OUTPUT.PUT_LINE('FINAL INSERTQUERY:  '||strquery3);
+   
+EXECUTE IMMEDIATE (strquery3);
+
+  v_insert_rowcount  := SQL%ROWCOUNT;
+p_rowcount  :=v_insert_rowcount;
+   IF v_insert_rowcount  >= 0
+   THEN
+      p_success := 0;
+   END IF;
+   COMMIT;
+   
+EXCEPTION
+   WHEN OTHERS
+   THEN
+      p_success := -1;
+      v_error_code := SQLCODE;
+      v_error_msg := v_error_msg || SQLERRM;
+      ROLLBACK;
+      p3_errorlog ('copydata_prc', v_error_msg,' ');
+END;
+/
+
+/*
+TEST CODE BLOCK:
+
+
+SET SERVEROUTPUT ON;
+
+DECLARE
+v_ret NUMBER(5);
+v_rowcount NUMBER;
+   v_time VARCHAR2(200);
+BEGIN
+SELECT  to_char(systimestamp, 'HH24:MI:SS.FF6')  INTO v_time FROM dual;
+   DBMS_OUTPUT.PUT_LINE('START TIME:  '|| v_time);
+   
+copydata('TEST_SRC_TABLE','TEST_DEST_TABLE',v_rowcount,v_ret);
+
+SELECT  to_char(systimestamp, 'HH24:MI:SS.FF6')  INTO v_time FROM dual;
+   DBMS_OUTPUT.PUT_LINE('END TIME:  '|| v_time);  
+
+END;
+/
+*/
+
+
