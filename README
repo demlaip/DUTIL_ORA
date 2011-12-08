@@ -1,0 +1,4 @@
+DUTIL_ORA project is about building commonly used utility computation in different DAtawarehouse procedures.
+This package would help in reducing development time.
+
+-- its just started,hope to be complete,as the aggregation of common utilities is researched.
