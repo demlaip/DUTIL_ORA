@@ -1,4 +1,14 @@
-DUTIL_ORA project is about building commonly used utility computation in different DAtawarehouse procedures.
+DUTIL_ORA project:
+
+NAme of the Project derived from the fact that,this project deals with the set of procedures which can be useful in 
+Datawarehousing jobs against Oracle Database.
+
+Its just started to realize the fact how Datawarehousing tools offer thses procedures via GUI.
+
+This project includes procedures,which do as:
+copyFilteredDAta_Prc : To copy Filtered data from one table to another,where column names are dynamically fetched.
+
+
 This package would help in reducing development time.
 
 -- its just started,hope to be complete,as the aggregation of common utilities is researched.
